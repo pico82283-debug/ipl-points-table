@@ -8,21 +8,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <style>
-:root {
-  --gold:#FFB800; --gold-light:#FFD860; --dark:#07070f;
-  --card-bg:#10101c; --surface:#16162a; --border:rgba(255,184,0,0.15);
-  --text:#e8e8f0; --muted:#5a5a7a; --red:#ff4444; --green:#32dc96; --blue:#50a0ff;
-  --purple:#a050ff;
+:root{
+  --gold:#FFB800;--gold-light:#FFD860;--dark:#07070f;
+  --card-bg:#10101c;--surface:#16162a;--border:rgba(255,184,0,0.15);
+  --text:#e8e8f0;--muted:#5a5a7a;--red:#ff4444;--green:#32dc96;--blue:#50a0ff;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--dark);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse 70% 50% at 15% 10%,rgba(255,184,0,.07) 0%,transparent 60%),
-  radial-gradient(ellipse 50% 40% at 85% 85%,rgba(80,160,255,.05) 0%,transparent 60%),
-  radial-gradient(ellipse 40% 30% at 50% 50%,rgba(160,80,255,.03) 0%,transparent 70%);
+  radial-gradient(ellipse 50% 40% at 85% 85%,rgba(80,160,255,.05) 0%,transparent 60%);
 pointer-events:none;z-index:0;}
 
-/* ── LOGIN ── */
+/* LOGIN */
 #login-screen{position:fixed;inset:0;z-index:9999;background:var(--dark);display:flex;align-items:center;justify-content:center;}
 .login-box{background:var(--card-bg);border:1px solid var(--border);border-radius:24px;padding:52px 44px;width:100%;max-width:420px;text-align:center;position:relative;overflow:hidden;}
 .login-box::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(255,184,0,.12),transparent 70%);pointer-events:none;}
@@ -34,97 +32,85 @@ pointer-events:none;z-index:0;}
 .login-btn:hover{opacity:.88;}
 .login-err{color:var(--red);font-size:13px;margin-top:12px;letter-spacing:1px;min-height:20px;}
 
-/* ── APP ── */
+/* HEADER */
 #app{display:none;position:relative;z-index:1;}
-.header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:rgba(16,16,28,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;}
-.header-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(16,16,28,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .header-sub{font-size:9px;letter-spacing:3px;color:var(--muted);}
-.header-right{display:flex;align-items:center;gap:12px;}
+.header-right{display:flex;align-items:center;gap:10px;}
 .header-user{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;}
 .logout-btn{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:var(--red);border-radius:8px;padding:7px 14px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;}
 
-.main{max-width:1100px;margin:0 auto;padding:28px 20px;}
+/* NAV TABS */
+.nav-tabs{display:flex;background:rgba(16,16,28,.95);border-bottom:1px solid var(--border);padding:0 24px;}
+.nav-tab{padding:14px 24px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.nav-tab:hover{color:var(--text);}
 
-/* ── LEADERBOARD ── */
-.section-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:20px;display:flex;align-items:center;gap:12px;}
-.section-title span{font-size:13px;font-family:'Rajdhani',sans-serif;color:var(--muted);letter-spacing:2px;font-weight:600;}
+.main{max-width:900px;margin:0 auto;padding:28px 20px;}
+.panel{display:none;}
+.panel.active{display:block;}
 
-/* Rank cards */
-.leaderboard{display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
-.rank-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:20px 24px;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
-.rank-card:hover{transform:translateY(-2px);border-color:rgba(255,184,0,.3);}
-.rank-card.rank-1{border-color:rgba(255,184,0,.5);background:linear-gradient(135deg,rgba(255,184,0,.08),var(--card-bg));}
-.rank-card.rank-2{border-color:rgba(192,192,192,.4);background:linear-gradient(135deg,rgba(192,192,192,.06),var(--card-bg));}
-.rank-card.rank-3{border-color:rgba(205,127,50,.4);background:linear-gradient(135deg,rgba(205,127,50,.06),var(--card-bg));}
-.rank-card::after{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:var(--rank-color,var(--border));border-radius:0 16px 16px 0;}
-.rank-card.rank-1::after{background:var(--gold);}
-.rank-card.rank-2::after{background:#c0c0c0;}
-.rank-card.rank-3::after{background:#cd7f32;}
-
-.rank-num{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;width:52px;text-align:center;flex-shrink:0;}
-.rank-1 .rank-num{color:var(--gold);}
-.rank-2 .rank-num{color:#c0c0c0;}
-.rank-3 .rank-num{color:#cd7f32;}
-.rank-num.other{color:var(--muted);font-size:32px;}
-
-.rank-medal{font-size:28px;flex-shrink:0;}
-.rank-info{flex:1;min-width:0;}
-.rank-team{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--text);line-height:1;}
-.rank-matches{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
-.rank-points{text-align:right;flex-shrink:0;}
-.rank-pts-num{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:var(--gold);line-height:1;}
-.rank-pts-label{font-size:9px;letter-spacing:3px;color:var(--muted);text-align:right;}
-
-/* Progress bar */
-.rank-bar-wrap{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.04);}
-.rank-bar{height:3px;border-radius:2px;transition:width .6s ease;}
-
-/* ── MATCH HISTORY ── */
-.matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:36px;}
-.match-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
-.match-num{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:8px;}
-.match-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--text);margin-bottom:10px;}
-.match-pts-list{display:flex;flex-direction:column;gap:5px;}
-.match-pts-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-.match-pts-team{color:var(--muted);font-weight:600;}
-.match-pts-val{font-family:'Orbitron',monospace;font-size:12px;color:var(--green);font-weight:700;}
-.match-pts-val.zero{color:var(--muted);}
-
-/* ── ADMIN PANEL ── */
-#admin-panel{background:var(--card-bg);border:1px solid rgba(255,184,0,.3);border-radius:18px;padding:24px;margin-bottom:28px;}
-.admin-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);margin-bottom:18px;}
-.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-@media(max-width:600px){.admin-grid{grid-template-columns:1fr;}}
-.admin-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
-.admin-box-title{font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;font-weight:700;}
-.admin-input{width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:8px;transition:border-color .2s;}
+/* ADMIN */
+#admin-section{background:var(--card-bg);border:1px solid rgba(255,184,0,.3);border-radius:16px;padding:22px;margin-bottom:28px;}
+.admin-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);margin-bottom:16px;}
+.admin-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.admin-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;outline:none;transition:border-color .2s;flex:1;min-width:160px;}
 .admin-input:focus{border-color:var(--gold);}
-.admin-select{width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:8px;cursor:pointer;}
-.admin-btn{width:100%;background:linear-gradient(135deg,var(--gold),#ff9500);color:#000;border:none;border-radius:8px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;transition:opacity .2s;margin-top:4px;}
-.admin-btn:hover{opacity:.88;}
+.admin-btn{background:linear-gradient(135deg,var(--gold),#ff9500);color:#000;border:none;border-radius:8px;padding:11px 22px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;white-space:nowrap;}
 .admin-btn.red{background:linear-gradient(135deg,#ff4444,#cc2222);color:#fff;}
-.pts-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.pts-team-label{font-size:13px;font-weight:700;color:var(--text);width:110px;flex-shrink:0;letter-spacing:1px;}
-.pts-input{flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;outline:none;transition:border-color .2s;text-align:center;}
+.pts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:12px;}
+.pts-item{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.pts-label{font-size:13px;font-weight:700;color:var(--text);flex:1;letter-spacing:1px;}
+.pts-input{width:70px;background:var(--dark);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;outline:none;text-align:center;}
 .pts-input:focus{border-color:var(--gold);}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.admin-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;outline:none;flex:1;}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 24px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;z-index:9999;transition:transform .3s,opacity .3s;opacity:0;white-space:nowrap;}
+/* MY POINTS */
+.my-pts-card{background:var(--card-bg);border:1px solid rgba(255,184,0,.3);border-radius:16px;padding:28px;margin-bottom:20px;text-align:center;}
+.my-pts-team{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--text);margin-bottom:4px;}
+.my-pts-big{font-family:'Orbitron',monospace;font-size:72px;font-weight:900;color:var(--gold);line-height:1;margin:12px 0;}
+.my-pts-sub{font-size:12px;letter-spacing:3px;color:var(--muted);margin-bottom:20px;}
+.my-rank-badge{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 20px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);}
+.mh-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--muted);margin:20px 0 12px;}
+.mh-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.mh-name{font-size:14px;font-weight:700;color:var(--text);}
+.mh-date{font-size:11px;color:var(--muted);margin-top:2px;}
+.mh-pts{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;}
+.mh-pts.pos{color:var(--green);}
+.mh-pts.zero{color:var(--muted);}
+
+/* LEADERBOARD */
+.lb-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden;transition:transform .15s;margin-bottom:10px;}
+.lb-card:hover{transform:translateY(-1px);}
+.lb-card.r1{border-color:rgba(255,184,0,.5);background:linear-gradient(135deg,rgba(255,184,0,.07),var(--card-bg));}
+.lb-card.r2{border-color:rgba(192,192,192,.35);}
+.lb-card.r3{border-color:rgba(205,127,50,.35);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:38px;width:46px;text-align:center;flex-shrink:0;line-height:1;}
+.r1 .lb-rank{color:var(--gold);}
+.r2 .lb-rank{color:#c0c0c0;}
+.r3 .lb-rank{color:#cd7f32;}
+.lb-rank.other{color:var(--muted);font-size:28px;}
+.lb-medal{font-size:26px;flex-shrink:0;}
+.lb-info{flex:1;}
+.lb-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;}
+.lb-meta{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.lb-pts{text-align:right;flex-shrink:0;}
+.lb-pts-num{font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:var(--gold);line-height:1;}
+.lb-pts-lbl{font-size:9px;letter-spacing:3px;color:var(--muted);}
+.lb-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.04);}
+.lb-bar-fill{height:3px;border-radius:2px;transition:width .8s ease;}
+
+.empty{text-align:center;padding:48px;color:var(--muted);}
+.empty-icon{font-size:44px;margin-bottom:10px;}
+.empty-msg{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 24px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;z-index:9999;transition:transform .3s,opacity .3s;opacity:0;white-space:nowrap;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 .toast.green{border-color:rgba(50,220,150,.4);color:var(--green);}
 .toast.red{border-color:rgba(255,68,68,.4);color:var(--red);}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
-.tab{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--muted);cursor:pointer;transition:all .2s;}
-.tab.active,.tab:hover{background:rgba(255,184,0,.1);border-color:rgba(255,184,0,.4);color:var(--gold);}
-.tab-panel{display:none;}
-.tab-panel.active{display:block;}
-
-/* ── NO MATCHES ── */
-.empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
-.empty-state .icon{font-size:48px;margin-bottom:12px;}
-.empty-state .msg{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
 </style>
 </head>
 <body>
@@ -135,8 +121,8 @@ pointer-events:none;z-index:0;}
     <div class="login-logo">IPL</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--text);margin-top:-8px;">POINTS TABLE</div>
     <div class="login-sub">2025 · Live Rankings</div>
-    <input class="login-input" id="login-id" placeholder="Team ID (e.g. team1)" autocomplete="off" />
-    <input class="login-input" id="login-pass" type="password" placeholder="Password" />
+    <input class="login-input" id="login-id" placeholder="Team ID (e.g. team1)" autocomplete="off"/>
+    <input class="login-input" id="login-pass" type="password" placeholder="Password"/>
     <button class="login-btn" onclick="doLogin()">ENTER</button>
     <div class="login-err" id="login-err"></div>
   </div>
@@ -154,97 +140,52 @@ pointer-events:none;z-index:0;}
       <button class="logout-btn" onclick="doLogout()">LOGOUT</button>
     </div>
   </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" id="tab-btn-mypoints" onclick="showTab('mypoints')">⭐ MY POINTS</div>
+    <div class="nav-tab" id="tab-btn-leaderboard" onclick="showTab('leaderboard')">🏆 LEADERBOARD</div>
+  </div>
 
   <div class="main">
-    <!-- Admin Panel -->
-    <div id="admin-panel" style="display:none;">
-      <div class="admin-title">⚙️ ADMIN — ADD MATCH POINTS</div>
-      <div class="admin-grid">
-        <div class="admin-box">
-          <div class="admin-box-title">MATCH DETAILS</div>
-          <input class="admin-input" id="match-name" placeholder="Match name (e.g. MI vs CSK — Match 1)" />
-          <input class="admin-input" id="match-date" type="date" />
-        </div>
-        <div class="admin-box">
-          <div class="admin-box-title">POINTS PER TEAM</div>
-          <div id="pts-inputs"></div>
-        </div>
+    <div id="admin-section" style="display:none;">
+      <div class="admin-title">⚙️ ADD MATCH POINTS</div>
+      <div class="admin-row">
+        <input class="admin-input" id="match-name" placeholder="Match name (e.g. MI vs CSK — Match 1)"/>
+        <input class="admin-input" id="match-date" type="date" style="max-width:180px;"/>
       </div>
-      <button class="admin-btn" onclick="adminAddMatch()" style="margin-top:12px;">➕ ADD MATCH & SAVE POINTS</button>
-
-      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
-        <div class="admin-box-title" style="margin-bottom:10px;">🗑 DELETE A MATCH</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <select class="admin-select" id="delete-match-sel" style="flex:1;margin-bottom:0;"></select>
-          <button class="admin-btn red" onclick="adminDeleteMatch()" style="width:auto;padding:10px 20px;font-size:15px;margin-top:0;">DELETE</button>
-        </div>
+      <div class="pts-grid" id="pts-inputs"></div>
+      <button class="admin-btn" onclick="adminAddMatch()">➕ SAVE MATCH POINTS</button>
+      <hr class="divider"/>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH</div>
+      <div class="admin-row">
+        <select class="admin-select" id="delete-match-sel"></select>
+        <button class="admin-btn red" onclick="adminDeleteMatch()">🗑 DELETE</button>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" onclick="showTab('leaderboard')">🏆 LEADERBOARD</div>
-      <div class="tab" onclick="showTab('matches')">📋 MATCH HISTORY</div>
-    </div>
-
-    <!-- Leaderboard Tab -->
-    <div class="tab-panel active" id="tab-leaderboard">
-      <div class="section-title">🏆 STANDINGS <span>LIVE RANKINGS</span></div>
-      <div class="leaderboard" id="leaderboard"></div>
-    </div>
-
-    <!-- Match History Tab -->
-    <div class="tab-panel" id="tab-matches">
-      <div class="section-title">📋 MATCH HISTORY <span id="match-count-label"></span></div>
-      <div class="matches-grid" id="matches-grid"></div>
-    </div>
+    <div class="panel active" id="panel-mypoints"></div>
+    <div class="panel" id="panel-leaderboard"></div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════ FIREBASE CONFIG ═══════════════════════
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCBOS32r3W9kI8zCYZR40tyZL0-3cLp2-8",
-  authDomain: "ipl-auction-a620b.firebaseapp.com",
-  databaseURL: "https://ipl-auction-a620b-default-rtdb.firebaseio.com",
-  projectId: "ipl-auction-a620b",
-  storageBucket: "ipl-auction-a620b.firebasestorage.app",
-  messagingSenderId: "632282316728",
-  appId: "1:632282316728:web:fe59d5b04bd830bf93d94d"
-};
+const FIREBASE_CONFIG={apiKey:"AIzaSyCBOS32r3W9kI8zCYZR40tyZL0-3cLp2-8",authDomain:"ipl-auction-a620b.firebaseapp.com",databaseURL:"https://ipl-auction-a620b-default-rtdb.firebaseio.com",projectId:"ipl-auction-a620b",storageBucket:"ipl-auction-a620b.firebasestorage.app",messagingSenderId:"632282316728",appId:"1:632282316728:web:fe59d5b04bd830bf93d94d"};
+const ADMIN_CREDS={id:'admin',pass:'ipl@admin2025'};
+const DEFAULT_TEAMS={team1:{name:'TEAM ALPHA',pass:'team1pass'},team2:{name:'TEAM BRAVO',pass:'team2pass'},team3:{name:'TEAM CHARLIE',pass:'team3pass'},team4:{name:'TEAM DELTA',pass:'team4pass'},team5:{name:'TEAM ECHO',pass:'team5pass'}};
+const MEDALS=['🥇','🥈','🥉'];
+const RANK_COLORS=['#FFB800','#c0c0c0','#cd7f32','#50a0ff','#a050ff'];
 
-// ═══════════════════════ CONSTANTS ═══════════════════════
-const ADMIN_CREDS = { id:'admin', pass:'ipl@admin2025' };
-const DEFAULT_TEAMS = {
-  team1:{ name:'TEAM ALPHA',  pass:'team1pass' },
-  team2:{ name:'TEAM BRAVO',  pass:'team2pass' },
-  team3:{ name:'TEAM CHARLIE',pass:'team3pass' },
-  team4:{ name:'TEAM DELTA',  pass:'team4pass' },
-  team5:{ name:'TEAM ECHO',   pass:'team5pass' },
-};
-const MEDAL = ['🥇','🥈','🥉'];
-const RANK_COLORS = ['#FFB800','#c0c0c0','#cd7f32','#50a0ff','#a050ff'];
+let db=null,currentUser=null,isAdmin=false;
+let teamsData=JSON.parse(JSON.stringify(DEFAULT_TEAMS));
+let matchesData={},listeners=[];
 
-// ═══════════════════════ STATE ═══════════════════════
-let db=null, currentUser=null, isAdmin=false;
-let teamsData={...DEFAULT_TEAMS};
-let matchesData={};
-let listeners=[];
-
-// ═══════════════════════ FIREBASE ═══════════════════════
 function initFirebase(){
-  try{
-    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    db=firebase.database();
-    return true;
-  } catch(e){ console.error(e); return false; }
+  try{if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();return true;}
+  catch(e){console.error(e);return false;}
 }
 
-// ═══════════════════════ LOGIN ═══════════════════════
-document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-document.getElementById('login-id').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('login-id').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
 
 async function doLogin(){
   const id=document.getElementById('login-id').value.trim().toLowerCase();
@@ -252,262 +193,219 @@ async function doLogin(){
   const err=document.getElementById('login-err');
   err.textContent='';
   if(!id||!pass){err.textContent='Please enter ID and password.';return;}
-
-  // Admin login
   if(id===ADMIN_CREDS.id&&pass===ADMIN_CREDS.pass){
-    currentUser='admin'; isAdmin=true;
+    currentUser='admin';isAdmin=true;
     if(!initFirebase()){err.textContent='Database connection failed.';currentUser=null;isAdmin=false;return;}
-    launchApp(); return;
+    launchApp();return;
   }
-
-  // Team login — check Firebase first, fallback to defaults
   if(!initFirebase()){err.textContent='Database connection failed.';return;}
   try{
-    // Try to get team name from auction Firebase
     const snap=await db.ref('/teams/'+id).get();
     if(snap.exists()){
       const t=snap.val();
-      // Use auction pass if available, else default
-      const validPass = t.pass || DEFAULT_TEAMS[id]?.pass;
-      if(validPass===pass){ currentUser=id; isAdmin=false; launchApp(); return; }
-      else{ err.textContent='Incorrect password.'; return; }
+      const vp=t.pass||DEFAULT_TEAMS[id]?.pass;
+      if(vp===pass){currentUser=id;isAdmin=false;launchApp();return;}
+      err.textContent='Incorrect password.';
     } else {
-      // Fallback to hardcoded defaults
-      if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){ currentUser=id; isAdmin=false; launchApp(); return; }
-      err.textContent='Team ID not found.'; return;
+      if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;launchApp();return;}
+      err.textContent='Team ID not found.';
     }
-  } catch(e){
-    // Offline fallback
-    if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){ currentUser=id; isAdmin=false; launchApp(); return; }
+  }catch(e){
+    if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;launchApp();return;}
     err.textContent='Connection error. Try again.';
   }
 }
 
 function doLogout(){
-  listeners.forEach(fn=>fn()); listeners=[];
-  currentUser=null; isAdmin=false;
+  listeners.forEach(fn=>fn());listeners=[];
+  currentUser=null;isAdmin=false;
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('login-id').value='';
   document.getElementById('login-pass').value='';
-  document.getElementById('admin-panel').style.display='none';
+  document.getElementById('admin-section').style.display='none';
 }
 
-// ═══════════════════════ LAUNCH ═══════════════════════
 function launchApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('header-user').textContent = isAdmin ? '👑 ADMIN' : (teamsData[currentUser]?.name||currentUser.toUpperCase());
-
-  if(isAdmin){
-    document.getElementById('admin-panel').style.display='block';
-  }
-
-  // Load team names from auction Firebase
-  if(db){
-    db.ref('/teams').get().then(snap=>{
-      if(snap.exists()){
-        const t=snap.val();
-        Object.keys(DEFAULT_TEAMS).forEach(id=>{
-          if(t[id]?.name) teamsData[id]={...DEFAULT_TEAMS[id],name:t[id].name,pass:t[id].pass||DEFAULT_TEAMS[id].pass};
-        });
-        document.getElementById('header-user').textContent = isAdmin ? '👑 ADMIN' : (teamsData[currentUser]?.name||currentUser.toUpperCase());
-        renderPtsInputs();
-      }
-    }).catch(()=>{});
-  }
-
-  setupPointsListener();
-  renderPtsInputs();
+  if(isAdmin)document.getElementById('admin-section').style.display='block';
+  db.ref('/teams').get().then(snap=>{
+    if(snap.exists()){
+      const t=snap.val();
+      Object.keys(DEFAULT_TEAMS).forEach(id=>{
+        if(t[id]?.name)teamsData[id]={...DEFAULT_TEAMS[id],name:t[id].name,pass:t[id].pass||DEFAULT_TEAMS[id].pass};
+      });
+    }
+    document.getElementById('header-user').textContent=isAdmin?'👑 ADMIN':(teamsData[currentUser]?.name||currentUser.toUpperCase());
+    renderPtsInputs();
+    setupListener();
+  }).catch(()=>{
+    document.getElementById('header-user').textContent=isAdmin?'👑 ADMIN':(teamsData[currentUser]?.name||currentUser.toUpperCase());
+    renderPtsInputs();
+    setupListener();
+  });
 }
 
-// ═══════════════════════ FIREBASE LISTENERS ═══════════════════════
-function setupPointsListener(){
-  if(!db) return;
+function setupListener(){
   const ref=db.ref('/points');
   const off=ref.on('value',snap=>{
-    matchesData = snap.exists() ? snap.val() : {};
-    // Convert object to array if needed
-    if(!Array.isArray(matchesData) && typeof matchesData === 'object'){
-      // keep as object keyed by matchId
-    }
-    renderLeaderboard();
-    renderMatchHistory();
-    renderDeleteMatchSelect();
+    matchesData=snap.exists()?snap.val():{};
+    renderAll();
   });
   listeners.push(()=>ref.off('value',off));
 }
 
-// ═══════════════════════ RENDER PTS INPUTS ═══════════════════════
-function renderPtsInputs(){
-  const el=document.getElementById('pts-inputs');
-  if(!el) return;
-  let html='';
-  Object.entries(teamsData).forEach(([id,t])=>{
-    html+=`<div class="pts-row">
-      <div class="pts-team-label">${t.name||id.toUpperCase()}</div>
-      <input class="pts-input" id="pts-${id}" type="number" min="0" step="1" placeholder="0" />
-    </div>`;
+function renderAll(){renderMyPoints();renderLeaderboard();renderDeleteMatchSelect();}
+
+function showTab(key){
+  ['mypoints','leaderboard'].forEach(k=>{
+    document.getElementById('tab-btn-'+k).classList.toggle('active',k===key);
+    document.getElementById('panel-'+k).classList.toggle('active',k===key);
   });
+}
+
+function calcTotals(){
+  const totals={};
+  Object.keys(teamsData).forEach(id=>totals[id]=0);
+  Object.values(matchesData).forEach(m=>{
+    Object.entries(m.points||{}).forEach(([id,pts])=>{if(totals[id]!==undefined)totals[id]+=pts;});
+  });
+  return totals;
+}
+
+function renderMyPoints(){
+  const el=document.getElementById('panel-mypoints');
+  if(!el)return;
+  const totals=calcTotals();
+  const sorted=Object.keys(teamsData).sort((a,b)=>totals[b]-totals[a]);
+  const matches=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+
+  if(isAdmin){
+    let html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">';
+    sorted.forEach((id,i)=>{
+      const t=teamsData[id];
+      html+=`<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">${MEDALS[i]||'#'+(i+1)}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;">${t.name||id.toUpperCase()}</div>
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--gold);margin:6px 0;">${totals[id]}</div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--muted);">POINTS</div>
+      </div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;return;
+  }
+
+  const myPts=totals[currentUser]||0;
+  const myRank=sorted.indexOf(currentUser)+1;
+  const team=teamsData[currentUser];
+
+  let html=`<div class="my-pts-card">
+    <div class="my-pts-team">${team?.name||currentUser.toUpperCase()}</div>
+    <div class="my-pts-big">${myPts}</div>
+    <div class="my-pts-sub">TOTAL POINTS</div>
+    <div class="my-rank-badge">${MEDALS[myRank-1]||'#'+myRank}&nbsp; RANK ${myRank} OF ${Object.keys(teamsData).length}</div>
+  </div>
+  <div class="mh-title">📋 MATCH HISTORY (${matches.length})</div>`;
+
+  if(!matches.length){
+    html+=`<div class="empty"><div class="empty-icon">🏏</div><div class="empty-msg">NO MATCHES YET</div></div>`;
+  } else {
+    matches.forEach(([id,m],idx)=>{
+      const pts=(m.points||{})[currentUser]||0;
+      html+=`<div class="mh-row">
+        <div><div class="mh-name">${m.name}</div><div class="mh-date">${m.date||''} · Match ${matches.length-idx}</div></div>
+        <div class="mh-pts ${pts>0?'pos':'zero'}">${pts>0?'+'+pts:'—'}</div>
+      </div>`;
+    });
+  }
   el.innerHTML=html;
 }
 
-// ═══════════════════════ ADMIN ADD MATCH ═══════════════════════
-async function adminAddMatch(){
-  if(!isAdmin) return;
-  const matchName=document.getElementById('match-name').value.trim();
-  const matchDate=document.getElementById('match-date').value;
-  if(!matchName){toast('Enter a match name','red');return;}
-
-  const pts={};
-  let hasAny=false;
-  Object.keys(teamsData).forEach(id=>{
-    const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;
-    pts[id]=v;
-    if(v>0) hasAny=true;
-  });
-  if(!hasAny){toast('Enter points for at least one team','red');return;}
-
-  const matchId='match_'+Date.now();
-  const matchEntry={
-    name:matchName,
-    date:matchDate||new Date().toISOString().split('T')[0],
-    points:pts,
-    timestamp:Date.now()
-  };
-
-  try{
-    await db.ref('/points/'+matchId).set(matchEntry);
-    toast('✅ Match added & points saved!','green');
-    document.getElementById('match-name').value='';
-    document.getElementById('match-date').value='';
-    Object.keys(teamsData).forEach(id=>{ const el=document.getElementById('pts-'+id); if(el) el.value=''; });
-  } catch(e){
-    toast('Failed to save: '+e.message,'red');
-  }
-}
-
-// ═══════════════════════ ADMIN DELETE MATCH ═══════════════════════
-function renderDeleteMatchSelect(){
-  const sel=document.getElementById('delete-match-sel');
-  if(!sel) return;
-  const matches=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
-  if(!matches.length){ sel.innerHTML='<option>No matches yet</option>'; return; }
-  sel.innerHTML=matches.map(([id,m])=>`<option value="${id}">${m.name} (${m.date})</option>`).join('');
-}
-
-async function adminDeleteMatch(){
-  if(!isAdmin) return;
-  const sel=document.getElementById('delete-match-sel');
-  const matchId=sel?.value;
-  if(!matchId||!matchesData[matchId]){toast('Select a match to delete','red');return;}
-  if(!confirm('Delete "'+matchesData[matchId].name+'"? This will remove its points from all teams.')) return;
-  try{
-    await db.ref('/points/'+matchId).remove();
-    toast('Match deleted','red');
-  } catch(e){
-    toast('Delete failed: '+e.message,'red');
-  }
-}
-
-// ═══════════════════════ LEADERBOARD ═══════════════════════
 function renderLeaderboard(){
-  const el=document.getElementById('leaderboard');
-  if(!el) return;
-
-  // Calculate totals
-  const totals={};
+  const el=document.getElementById('panel-leaderboard');
+  if(!el)return;
+  const totals=calcTotals();
   const matchCount={};
-  Object.keys(teamsData).forEach(id=>{ totals[id]=0; matchCount[id]=0; });
+  Object.keys(teamsData).forEach(id=>matchCount[id]=0);
   Object.values(matchesData).forEach(m=>{
-    Object.entries(m.points||{}).forEach(([id,pts])=>{
-      if(totals[id]!==undefined){ totals[id]+=pts; if(pts>0) matchCount[id]++; }
-    });
+    Object.entries(m.points||{}).forEach(([id,pts])=>{if(pts>0&&matchCount[id]!==undefined)matchCount[id]++;});
   });
-
-  // Sort by points desc
   const sorted=Object.keys(teamsData).sort((a,b)=>totals[b]-totals[a]);
   const maxPts=Math.max(1,...Object.values(totals));
   const totalMatches=Object.keys(matchesData).length;
-
   let html='';
   sorted.forEach((id,i)=>{
     const rank=i+1;
     const team=teamsData[id];
     const pts=totals[id];
     const pct=Math.round((pts/maxPts)*100);
-    const rankClass=rank<=3?'rank-'+rank:'';
-    const medal=rank<=3?MEDAL[i]:'';
+    const rClass=rank<=3?'r'+rank:'';
     const color=RANK_COLORS[i]||'var(--muted)';
-
-    html+=`<div class="rank-card ${rankClass}" style="--rank-color:${color}">
-      <div class="rank-num ${rank>3?'other':''}">${rank}</div>
-      ${medal?`<div class="rank-medal">${medal}</div>`:'<div style="width:28px"></div>'}
-      <div class="rank-info">
-        <div class="rank-team">${team.name||id.toUpperCase()}</div>
-        <div class="rank-matches">${matchCount[id]} match${matchCount[id]!==1?'es':''} scored · ${totalMatches} total played</div>
+    const isMe=id===currentUser;
+    html+=`<div class="lb-card ${rClass}" style="${isMe?'box-shadow:0 0 0 2px rgba(255,184,0,.5);':''}">
+      <div class="lb-rank ${rank>3?'other':''}">${rank}</div>
+      ${rank<=3?`<div class="lb-medal">${MEDALS[i]}</div>`:'<div style="width:26px"></div>'}
+      <div class="lb-info">
+        <div class="lb-name">${team?.name||id.toUpperCase()}${isMe?' <span style="font-size:11px;color:var(--gold);">(YOU)</span>':''}</div>
+        <div class="lb-meta">${matchCount[id]} match${matchCount[id]!==1?'es':''} scored · ${totalMatches} total</div>
       </div>
-      <div class="rank-points">
-        <div class="rank-pts-num">${pts}</div>
-        <div class="rank-pts-label">POINTS</div>
-      </div>
-      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${pct}%;background:${color};"></div></div>
+      <div class="lb-pts"><div class="lb-pts-num">${pts}</div><div class="lb-pts-lbl">POINTS</div></div>
+      <div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>`;
   });
-
-  el.innerHTML=html||'<div class="empty-state"><div class="icon">🏆</div><div class="msg">NO MATCHES YET</div></div>';
+  el.innerHTML=html||`<div class="empty"><div class="empty-icon">🏆</div><div class="empty-msg">NO MATCHES YET</div></div>`;
 }
 
-// ═══════════════════════ MATCH HISTORY ═══════════════════════
-function renderMatchHistory(){
-  const el=document.getElementById('matches-grid');
-  const label=document.getElementById('match-count-label');
-  if(!el) return;
-  const matches=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
-  if(label) label.textContent=matches.length+' MATCHES';
-
-  if(!matches.length){
-    el.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">📋</div><div class="msg">NO MATCHES PLAYED YET</div></div>';
-    return;
-  }
-
-  let html='';
-  matches.forEach(([id,m],idx)=>{
-    const pts=m.points||{};
-    // Sort teams by points for this match
-    const sorted=Object.entries(pts).sort((a,b)=>b[1]-a[1]);
-    html+=`<div class="match-card">
-      <div class="match-num">MATCH ${matches.length-idx} · ${m.date||''}</div>
-      <div class="match-title">${m.name}</div>
-      <div class="match-pts-list">
-        ${sorted.map(([tid,p])=>`<div class="match-pts-row">
-          <span class="match-pts-team">${teamsData[tid]?.name||tid.toUpperCase()}</span>
-          <span class="match-pts-val ${p===0?'zero':''}">${p>0?'+'+p:'—'}</span>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  });
-  el.innerHTML=html;
+function renderPtsInputs(){
+  const el=document.getElementById('pts-inputs');
+  if(!el)return;
+  el.innerHTML=Object.entries(teamsData).map(([id,t])=>`
+    <div class="pts-item">
+      <div class="pts-label">${t.name||id.toUpperCase()}</div>
+      <input class="pts-input" id="pts-${id}" type="number" min="0" step="1" placeholder="0"/>
+    </div>`).join('');
 }
 
-// ═══════════════════════ TABS ═══════════════════════
-function showTab(key){
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    const keys=['leaderboard','matches'];
-    t.classList.toggle('active',keys[i]===key);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p=>{
-    p.classList.toggle('active',p.id==='tab-'+key);
-  });
+async function adminAddMatch(){
+  if(!isAdmin)return;
+  const name=document.getElementById('match-name').value.trim();
+  const date=document.getElementById('match-date').value;
+  if(!name){toast('Enter a match name','red');return;}
+  const pts={};let any=false;
+  Object.keys(teamsData).forEach(id=>{const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;pts[id]=v;if(v>0)any=true;});
+  if(!any){toast('Enter points for at least one team','red');return;}
+  try{
+    await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,timestamp:Date.now()});
+    toast('✅ Match saved!','green');
+    document.getElementById('match-name').value='';
+    document.getElementById('match-date').value='';
+    Object.keys(teamsData).forEach(id=>{const e=document.getElementById('pts-'+id);if(e)e.value='';});
+  }catch(e){toast('Failed: '+e.message,'red');}
 }
 
-// ═══════════════════════ TOAST ═══════════════════════
-let toastTimer=null;
+function renderDeleteMatchSelect(){
+  const sel=document.getElementById('delete-match-sel');
+  if(!sel)return;
+  const m=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+  sel.innerHTML=m.length?m.map(([id,v])=>`<option value="${id}">${v.name} (${v.date})</option>`).join(''):'<option>No matches yet</option>';
+}
+
+async function adminDeleteMatch(){
+  if(!isAdmin)return;
+  const id=document.getElementById('delete-match-sel')?.value;
+  if(!id||!matchesData[id]){toast('Select a match','red');return;}
+  if(!confirm('Delete "'+matchesData[id].name+'"?'))return;
+  try{await db.ref('/points/'+id).remove();toast('Deleted','red');}
+  catch(e){toast('Failed: '+e.message,'red');}
+}
+
+let toastT=null;
 function toast(msg,type='green'){
   const el=document.getElementById('toast');
-  el.textContent=msg; el.className='toast '+type+' show';
-  if(toastTimer) clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+  el.textContent=msg;el.className='toast '+type+' show';
+  if(toastT)clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),3000);
 }
 </script>
 </body>

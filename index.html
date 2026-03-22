@@ -112,6 +112,16 @@ pointer-events:none;z-index:0;}
 .rule-pts{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;flex-shrink:0;padding:4px 10px;border-radius:8px;white-space:nowrap;}
 .rule-pts.normal{background:rgba(255,184,0,.12);color:var(--gold);border:1px solid rgba(255,184,0,.25);}
 .rule-pts.bonus{background:rgba(50,220,150,.1);color:var(--green);border:1px solid rgba(50,220,150,.25);}
+.history-entry{background:var(--card-bg);border-radius:12px;padding:14px 18px;display:flex;align-items:flex-start;gap:14px;margin-bottom:8px;border-left:4px solid var(--border);}
+.history-entry.gain{border-left-color:var(--green);}
+.history-entry.loss{border-left-color:var(--red);}
+.history-icon{font-size:22px;flex-shrink:0;}
+.history-body{flex:1;min-width:0;}
+.history-title{font-size:14px;font-weight:700;color:var(--text);}
+.history-detail{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.5px;}
+.history-pts{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;flex-shrink:0;padding:4px 10px;border-radius:8px;}
+.history-pts.pos{background:rgba(50,220,150,.1);color:var(--green);border:1px solid rgba(50,220,150,.25);}
+.history-pts.neg{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25);}
 .deduct-row{background:var(--surface);border:1px solid rgba(255,68,68,.2);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px;}
 .deduct-reason{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic;}
 .empty-icon{font-size:44px;margin-bottom:10px;}
@@ -155,6 +165,7 @@ pointer-events:none;z-index:0;}
     <div class="nav-tab active" id="tab-btn-mypoints" onclick="showTab('mypoints')">⭐ MY POINTS</div>
     <div class="nav-tab" id="tab-btn-leaderboard" onclick="showTab('leaderboard')">🏆 LEADERBOARD</div>
     <div class="nav-tab" id="tab-btn-rules" onclick="showTab('rules')">📜 RULES</div>
+    <div class="nav-tab" id="tab-btn-history" onclick="showTab('history')" style="display:none;">📊 HISTORY</div>
   </div>
 
   <div class="main">
@@ -165,6 +176,9 @@ pointer-events:none;z-index:0;}
         <input class="admin-input" id="match-date" type="date" style="max-width:180px;"/>
       </div>
       <div class="pts-grid" id="pts-inputs"></div>
+      <div class="admin-row">
+        <input class="admin-input" id="match-reason" placeholder="Reason / note (e.g. Virat scored 80 runs, Bumrah took 3 wkts)" style="flex:1;"/>
+      </div>
       <button class="admin-btn" onclick="adminAddMatch()">➕ SAVE MATCH POINTS</button>
       <hr class="divider"/>
       <div class="admin-title" style="font-size:16px;margin-bottom:12px;">➖ DEDUCT POINTS FROM A TEAM</div>
@@ -179,6 +193,8 @@ pointer-events:none;z-index:0;}
       </div>
       <button class="admin-btn red" onclick="adminDeductPoints()" style="margin-bottom:0;">➖ DEDUCT POINTS</button>
       <hr class="divider"/>
+      <button class="admin-btn" onclick="adminResetAll()" style="background:linear-gradient(135deg,#ff4444,#cc2222);color:#fff;margin-bottom:0;">⚠️ RESET ALL POINTS DATA</button>
+      <hr class="divider"/>
       <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH / DEDUCTION</div>
       <div class="admin-row">
         <select class="admin-select" id="delete-match-sel"></select>
@@ -188,9 +204,27 @@ pointer-events:none;z-index:0;}
 
     <div class="panel active" id="panel-mypoints"></div>
     <div class="panel" id="panel-rules"></div>
+    <div class="panel" id="panel-history"></div>
     <div class="panel" id="panel-leaderboard"></div>
   </div>
 </div>
+
+<!-- RESET MODAL -->
+<div id="pts-reset-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);align-items:center;justify-content:center;">
+  <div style="background:#12121c;border:2px solid var(--red);border-radius:18px;padding:36px 32px;max-width:420px;width:90%;text-align:center;">
+    <div style="font-size:48px;margin-bottom:8px;">⚠️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--red);margin-bottom:10px;">RESET ALL DATA</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;">This will permanently delete:<br>
+      <span style="color:var(--text);">• All match points history<br>• All point deductions<br>• All team totals reset to 0</span><br><br>
+      <span style="color:var(--green);">✅ Rules section will NOT be affected</span>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="confirmPtsReset()" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:13px 28px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;">YES, RESET</button>
+      <button onclick="document.getElementById('pts-reset-modal').style.display='none'" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:13px 28px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;">CANCEL</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -245,6 +279,7 @@ function doLogout(){
   listeners.forEach(fn=>fn());listeners=[];
   currentUser=null;isAdmin=false;
   document.getElementById('app').style.display='none';
+  document.getElementById('pts-reset-modal').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('login-id').value='';
   document.getElementById('login-pass').value='';
@@ -254,7 +289,12 @@ function doLogout(){
 function launchApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
-  if(isAdmin)document.getElementById('admin-section').style.display='block';
+  if(isAdmin){
+    document.getElementById('admin-section').style.display='block';
+    document.getElementById('tab-btn-history').style.display='none';
+  } else {
+    document.getElementById('tab-btn-history').style.display='';
+  }
   db.ref('/teams').get().then(snap=>{
     if(snap.exists()){
       const t=snap.val();
@@ -281,14 +321,15 @@ function setupListener(){
   listeners.push(()=>ref.off('value',off));
 }
 
-function renderAll(){renderMyPoints();renderLeaderboard();renderDeleteMatchSelect();}
+function renderAll(){renderMyPoints();renderLeaderboard();renderDeleteMatchSelect();if(!isAdmin)renderHistory();}
 
 function showTab(key){
-  ['mypoints','leaderboard','rules'].forEach(k=>{
+  ['mypoints','leaderboard','rules','history'].forEach(k=>{
     document.getElementById('tab-btn-'+k).classList.toggle('active',k===key);
     document.getElementById('panel-'+k).classList.toggle('active',k===key);
   });
   if(key==='rules') renderRules();
+  if(key==='history') renderHistory();
 }
 
 function calcTotals(){
@@ -351,7 +392,8 @@ function renderMyPoints(){
         html+=`<div class="deduct-row">
           <div>
             <div class="mh-name" style="color:var(--red);">➖ POINTS DEDUCTED</div>
-            <div class="deduct-reason">Reason: ${m.reason}</div>
+            <div class="mh-date">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()}</div>
+            <div class="deduct-reason">📝 Reason: ${m.reason}</div>
             <div class="mh-date">${m.date||''}</div>
           </div>
           <div class="mh-pts" style="color:var(--red);">−${m.amount}</div>
@@ -359,7 +401,7 @@ function renderMyPoints(){
       } else {
         const pts=(m.points||{})[currentUser]||0;
         html+=`<div class="mh-row">
-          <div><div class="mh-name">${m.name}</div><div class="mh-date">${m.date||''} · Match ${matchNum--}</div></div>
+          <div><div class="mh-name">${m.name}</div><div class="mh-date">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()} · ${m.date||''} · Match ${matchNum--}</div>${m.reason?`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:3px;">📝 ${m.reason}</div>`:''}</div>
           <div class="mh-pts ${pts>0?'pos':'zero'}">${pts>0?'+'+pts:'—'}</div>
         </div>`;
       }
@@ -452,16 +494,17 @@ async function adminAddMatch(){
   if(!isAdmin)return;
   const name=document.getElementById('match-name').value.trim();
   const date=document.getElementById('match-date').value;
+  const reason=document.getElementById('match-reason').value.trim();
   if(!name){toast('Enter a match name','red');return;}
   const pts={};let any=false;
   Object.keys(teamsData).forEach(id=>{const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;pts[id]=v;if(v>0)any=true;});
   if(!any){toast('Enter points for at least one team','red');return;}
   try{
-    await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,timestamp:Date.now()});
+    await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,reason:reason||'',timestamp:Date.now()});
     toast('✅ Match saved!','green');
     document.getElementById('match-name').value='';
     document.getElementById('match-date').value='';
-    Object.keys(teamsData).forEach(id=>{const e=document.getElementById('pts-'+id);if(e)e.value='';});
+    Object.keys(teamsData).forEach(id=>{const e=document.getElementById('pts-'+id);if(e)e.value='';}); const re=document.getElementById('match-reason');if(re)re.value='';
   }catch(e){toast('Failed: '+e.message,'red');}
 }
 
@@ -486,6 +529,61 @@ async function adminDeleteMatch(){
   catch(e){toast('Failed: '+e.message,'red');}
 }
 
+
+function renderHistory(){
+  const el=document.getElementById('panel-history');
+  if(!el) return;
+  if(isAdmin){ el.innerHTML='<div class="empty"><div class="empty-icon">🔒</div><div class="empty-msg">HISTORY IS FOR TEAM OWNERS ONLY</div></div>'; return; }
+
+  const allEntries=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+  let matchSeq=allEntries.filter(([,m])=>m.type!=='deduction').length;
+
+  if(!allEntries.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-msg">NO HISTORY YET</div></div>';
+    return;
+  }
+
+  let html=`<div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+    <div style="font-size:20px;">📊</div>
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);">POINTS HISTORY</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;">${teamsData[currentUser]?.name||currentUser.toUpperCase()} · Live updates · Read only</div>
+    </div>
+  </div>`;
+
+  allEntries.forEach(([id,m])=>{
+    if(m.type==='deduction'){
+      if(m.team!==currentUser) return;
+      html+=`<div class="history-entry loss">
+        <div class="history-icon">➖</div>
+        <div class="history-body">
+          <div class="history-title">Points Deducted by Admin</div>
+          <div class="history-detail">👥 ${teamsData[m.team]?.name||m.teamName||m.team}</div>
+          <div class="history-detail">📝 Reason: ${m.reason}</div>
+          <div class="history-detail">${m.date||''}</div>
+        </div>
+        <div class="history-pts neg">−${m.amount}</div>
+      </div>`;
+    } else {
+      const pts=(m.points||{})[currentUser]||0;
+      const seq=matchSeq--;
+      html+=`<div class="history-entry ${pts>0?'gain':''}">
+        <div class="history-icon">${pts>0?'🏏':'⬜'}</div>
+        <div class="history-body">
+          <div class="history-title">${m.name}</div>
+          <div class="history-detail">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()} · Match ${seq} · ${m.date||''}</div>
+          ${m.reason?`<div class="history-detail" style="color:rgba(255,184,0,.7);">📝 ${m.reason}</div>`:''}
+          ${pts===0?'<div class="history-detail" style="color:var(--muted);">No points scored this match</div>':''}
+        </div>
+        <div class="history-pts ${pts>0?'pos':'neg'}" style="${pts===0?'background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.08);':''}">
+          ${pts>0?'+'+pts:'—'}
+        </div>
+      </div>`;
+    }
+  });
+
+  el.innerHTML=html;
+}
 
 function renderRules(){
   const el=document.getElementById('panel-rules');
@@ -541,6 +639,25 @@ function renderRules(){
       🔒 Rules are read-only · Points are awarded per player per match · Bonus points stack with base points
     </div>
   `;
+}
+
+
+async function adminResetAll(){
+  if(!isAdmin){ toast('Access denied','red'); return; }
+  document.getElementById('pts-reset-modal').style.display='flex';
+}
+
+async function confirmPtsReset(){
+  document.getElementById('pts-reset-modal').style.display='none';
+  if(!isAdmin) return;
+  try{
+    await db.ref('/points').remove();
+    matchesData={};
+    renderAll();
+    toast('✅ All points data reset!','green');
+  } catch(e){
+    toast('Reset failed: '+e.message,'red');
+  }
 }
 
 let toastT=null;

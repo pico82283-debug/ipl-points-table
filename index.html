@@ -103,6 +103,17 @@ pointer-events:none;z-index:0;}
 .lb-bar-fill{height:3px;border-radius:2px;transition:width .8s ease;}
 
 .empty{text-align:center;padding:48px;color:var(--muted);}
+.rules-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;}
+.rules-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.rule-row{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.rule-row:last-child{border-bottom:none;}
+.rule-num{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);width:24px;flex-shrink:0;margin-top:2px;}
+.rule-text{font-size:14px;font-weight:600;color:var(--text);flex:1;line-height:1.5;}
+.rule-pts{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;flex-shrink:0;padding:4px 10px;border-radius:8px;white-space:nowrap;}
+.rule-pts.normal{background:rgba(255,184,0,.12);color:var(--gold);border:1px solid rgba(255,184,0,.25);}
+.rule-pts.bonus{background:rgba(50,220,150,.1);color:var(--green);border:1px solid rgba(50,220,150,.25);}
+.deduct-row{background:var(--surface);border:1px solid rgba(255,68,68,.2);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px;}
+.deduct-reason{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic;}
 .empty-icon{font-size:44px;margin-bottom:10px;}
 .empty-msg{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
 
@@ -143,6 +154,7 @@ pointer-events:none;z-index:0;}
   <div class="nav-tabs">
     <div class="nav-tab active" id="tab-btn-mypoints" onclick="showTab('mypoints')">⭐ MY POINTS</div>
     <div class="nav-tab" id="tab-btn-leaderboard" onclick="showTab('leaderboard')">🏆 LEADERBOARD</div>
+    <div class="nav-tab" id="tab-btn-rules" onclick="showTab('rules')">📜 RULES</div>
   </div>
 
   <div class="main">
@@ -155,7 +167,19 @@ pointer-events:none;z-index:0;}
       <div class="pts-grid" id="pts-inputs"></div>
       <button class="admin-btn" onclick="adminAddMatch()">➕ SAVE MATCH POINTS</button>
       <hr class="divider"/>
-      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH</div>
+      <div class="admin-title" style="font-size:16px;margin-bottom:12px;">➖ DEDUCT POINTS FROM A TEAM</div>
+      <div class="admin-row">
+        <select class="admin-select" id="deduct-team-sel">
+          <option value="">— Select Team —</option>
+        </select>
+        <input class="admin-input" id="deduct-pts" type="number" min="1" step="1" placeholder="Points to deduct" style="max-width:180px;"/>
+      </div>
+      <div class="admin-row">
+        <input class="admin-input" id="deduct-reason" placeholder="Reason for deduction (required)" style="flex:1;"/>
+      </div>
+      <button class="admin-btn red" onclick="adminDeductPoints()" style="margin-bottom:0;">➖ DEDUCT POINTS</button>
+      <hr class="divider"/>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH / DEDUCTION</div>
       <div class="admin-row">
         <select class="admin-select" id="delete-match-sel"></select>
         <button class="admin-btn red" onclick="adminDeleteMatch()">🗑 DELETE</button>
@@ -163,6 +187,7 @@ pointer-events:none;z-index:0;}
     </div>
 
     <div class="panel active" id="panel-mypoints"></div>
+    <div class="panel" id="panel-rules"></div>
     <div class="panel" id="panel-leaderboard"></div>
   </div>
 </div>
@@ -259,18 +284,26 @@ function setupListener(){
 function renderAll(){renderMyPoints();renderLeaderboard();renderDeleteMatchSelect();}
 
 function showTab(key){
-  ['mypoints','leaderboard'].forEach(k=>{
+  ['mypoints','leaderboard','rules'].forEach(k=>{
     document.getElementById('tab-btn-'+k).classList.toggle('active',k===key);
     document.getElementById('panel-'+k).classList.toggle('active',k===key);
   });
+  if(key==='rules') renderRules();
 }
 
 function calcTotals(){
   const totals={};
   Object.keys(teamsData).forEach(id=>totals[id]=0);
   Object.values(matchesData).forEach(m=>{
-    Object.entries(m.points||{}).forEach(([id,pts])=>{if(totals[id]!==undefined)totals[id]+=pts;});
+    if(m.type==='deduction'){
+      // deduction entry: {type:'deduction', team, amount, reason, date, timestamp}
+      if(totals[m.team]!==undefined) totals[m.team]-=m.amount;
+    } else {
+      Object.entries(m.points||{}).forEach(([id,pts])=>{if(totals[id]!==undefined)totals[id]+=pts;});
+    }
   });
+  // never go below 0
+  Object.keys(totals).forEach(id=>{ if(totals[id]<0) totals[id]=0; });
   return totals;
 }
 
@@ -311,12 +344,25 @@ function renderMyPoints(){
   if(!matches.length){
     html+=`<div class="empty"><div class="empty-icon">🏏</div><div class="empty-msg">NO MATCHES YET</div></div>`;
   } else {
-    matches.forEach(([id,m],idx)=>{
-      const pts=(m.points||{})[currentUser]||0;
-      html+=`<div class="mh-row">
-        <div><div class="mh-name">${m.name}</div><div class="mh-date">${m.date||''} · Match ${matches.length-idx}</div></div>
-        <div class="mh-pts ${pts>0?'pos':'zero'}">${pts>0?'+'+pts:'—'}</div>
-      </div>`;
+    let matchNum=matches.filter(([,m])=>m.type!=='deduction').length;
+    matches.forEach(([id,m])=>{
+      if(m.type==='deduction'){
+        if(m.team!==currentUser) return; // only show this team's deductions
+        html+=`<div class="deduct-row">
+          <div>
+            <div class="mh-name" style="color:var(--red);">➖ POINTS DEDUCTED</div>
+            <div class="deduct-reason">Reason: ${m.reason}</div>
+            <div class="mh-date">${m.date||''}</div>
+          </div>
+          <div class="mh-pts" style="color:var(--red);">−${m.amount}</div>
+        </div>`;
+      } else {
+        const pts=(m.points||{})[currentUser]||0;
+        html+=`<div class="mh-row">
+          <div><div class="mh-name">${m.name}</div><div class="mh-date">${m.date||''} · Match ${matchNum--}</div></div>
+          <div class="mh-pts ${pts>0?'pos':'zero'}">${pts>0?'+'+pts:'—'}</div>
+        </div>`;
+      }
     });
   }
   el.innerHTML=html;
@@ -365,6 +411,41 @@ function renderPtsInputs(){
       <div class="pts-label">${t.name||id.toUpperCase()}</div>
       <input class="pts-input" id="pts-${id}" type="number" min="0" step="1" placeholder="0"/>
     </div>`).join('');
+  // populate deduct team select
+  const sel=document.getElementById('deduct-team-sel');
+  if(sel){
+    sel.innerHTML='<option value="">— Select Team —</option>'+
+      Object.entries(teamsData).map(([id,t])=>`<option value="${id}">${t.name||id.toUpperCase()}</option>`).join('');
+  }
+}
+
+async function adminDeductPoints(){
+  if(!isAdmin)return;
+  const teamId=document.getElementById('deduct-team-sel')?.value;
+  const pts=parseInt(document.getElementById('deduct-pts')?.value||'0')||0;
+  const reason=document.getElementById('deduct-reason')?.value.trim();
+  if(!teamId){toast('Select a team','red');return;}
+  if(pts<=0){toast('Enter points to deduct (must be > 0)','red');return;}
+  if(!reason){toast('Reason is required before deducting points','red');return;}
+  const teamName=teamsData[teamId]?.name||teamId;
+  if(!confirm(`Deduct ${pts} points from ${teamName}?
+Reason: "${reason}"
+This will be visible in their match history.`))return;
+  try{
+    await db.ref('/points/deduct_'+Date.now()).set({
+      type:'deduction',
+      team:teamId,
+      teamName,
+      amount:pts,
+      reason,
+      date:new Date().toISOString().split('T')[0],
+      timestamp:Date.now()
+    });
+    toast(`➖ ${pts} points deducted from ${teamName}`,'red');
+    document.getElementById('deduct-pts').value='';
+    document.getElementById('deduct-reason').value='';
+    document.getElementById('deduct-team-sel').value='';
+  }catch(e){toast('Failed: '+e.message,'red');}
 }
 
 async function adminAddMatch(){
@@ -388,7 +469,12 @@ function renderDeleteMatchSelect(){
   const sel=document.getElementById('delete-match-sel');
   if(!sel)return;
   const m=Object.entries(matchesData).sort((a,b)=>b[1].timestamp-a[1].timestamp);
-  sel.innerHTML=m.length?m.map(([id,v])=>`<option value="${id}">${v.name} (${v.date})</option>`).join(''):'<option>No matches yet</option>';
+  sel.innerHTML=m.length?m.map(([id,v])=>{
+    const label=v.type==='deduction'
+      ?`➖ DEDUCTION: ${v.teamName||v.team} -${v.amount}pts — ${v.reason} (${v.date})`
+      :`${v.name} (${v.date})`;
+    return `<option value="${id}">${label}</option>`;
+  }).join(''):'<option>No entries yet</option>';
 }
 
 async function adminDeleteMatch(){
@@ -398,6 +484,63 @@ async function adminDeleteMatch(){
   if(!confirm('Delete "'+matchesData[id].name+'"?'))return;
   try{await db.ref('/points/'+id).remove();toast('Deleted','red');}
   catch(e){toast('Failed: '+e.message,'red');}
+}
+
+
+function renderRules(){
+  const el=document.getElementById('panel-rules');
+  if(!el||el.innerHTML.trim()) return; // render once only
+
+  const batting=[
+    {text:'Every <strong>10 RUNS</strong> scored by a player',pts:'+1 PT',bonus:false},
+    {text:'Player scores a <strong>CENTURY</strong> (100+ runs)',pts:'+5 BONUS',bonus:true},
+    {text:'<strong>MAN OF THE MATCH</strong> award winner',pts:'+1 BONUS',bonus:true},
+    {text:'<strong>ORANGE CAP</strong> winner (most runs in tournament)',pts:'+5 BONUS',bonus:true},
+  ];
+  const bowling=[
+    {text:'Every <strong>WICKET</strong> taken by a player',pts:'+2 PTS',bonus:false},
+    {text:'Taking <strong>4 WICKETS</strong> in an innings',pts:'+5 BONUS',bonus:true},
+    {text:'Taking <strong>5 WICKETS</strong> in an innings',pts:'+7 BONUS',bonus:true},
+    {text:'Taking <strong>6 WICKETS</strong> in an innings',pts:'+12 BONUS',bonus:true},
+    {text:'Every <strong>HAT-TRICK</strong> taken by a player',pts:'+5 BONUS',bonus:true},
+    {text:'<strong>PURPLE CAP</strong> winner (most wickets in tournament)',pts:'+5 BONUS',bonus:true},
+  ];
+  const fielding=[
+    {text:'Every <strong>LEGAL CATCH</strong> taken by a player',pts:'+1 PT',bonus:false},
+    {text:'Every <strong>STUMPING</strong> by a player',pts:'+2 PTS',bonus:false},
+    {text:'Every <strong>RUN OUT</strong> by a player',pts:'+1 PT',bonus:false},
+  ];
+  const special=[
+    {text:'<strong>MAN OF THE TOURNAMENT</strong> award winner',pts:'+7 BONUS',bonus:true},
+  ];
+
+  function buildSection(title, icon, rules){
+    return `<div class="rules-card">
+      <div class="rules-title">${icon} ${title}</div>
+      ${rules.map((r,i)=>`<div class="rule-row">
+        <div class="rule-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="rule-text">${r.text}</div>
+        <div class="rule-pts ${r.bonus?'bonus':'normal'}">${r.pts}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:24px;">📜</div>
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);">OFFICIAL POINTS RULES</div>
+        <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;">These rules are fixed and cannot be changed by anyone</div>
+      </div>
+    </div>
+    ${buildSection('BATTING','🏏',batting)}
+    ${buildSection('BOWLING','🎳',bowling)}
+    ${buildSection('FIELDING','🧤',fielding)}
+    ${buildSection('SPECIAL AWARDS','🏆',special)}
+    <div style="text-align:center;padding:16px;font-size:11px;color:var(--muted);letter-spacing:1px;">
+      🔒 Rules are read-only · Points are awarded per player per match · Bonus points stack with base points
+    </div>
+  `;
 }
 
 let toastT=null;

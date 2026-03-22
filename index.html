@@ -546,37 +546,47 @@ function renderHistory(){
   let html=`<div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
     <div style="font-size:20px;">📊</div>
     <div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);">POINTS HISTORY</div>
-      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;">${teamsData[currentUser]?.name||currentUser.toUpperCase()} · Live updates · Read only</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);">POINTS HISTORY — ALL TEAMS</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;">Live updates · Read only · All teams visible</div>
     </div>
   </div>`;
 
   allEntries.forEach(([id,m])=>{
     if(m.type==='deduction'){
-      if(m.team!==currentUser) return;
-      html+=`<div class="history-entry loss">
+      // Show ALL deductions for ALL teams
+      const tName = teamsData[m.team]?.name||m.teamName||m.team;
+      const isMyTeam = m.team===currentUser;
+      html+=`<div class="history-entry loss" style="${isMyTeam?'box-shadow:0 0 0 1px rgba(255,68,68,.3);':''}">
         <div class="history-icon">➖</div>
         <div class="history-body">
-          <div class="history-title">Points Deducted by Admin</div>
-          <div class="history-detail">👥 ${teamsData[m.team]?.name||m.teamName||m.team}</div>
+          <div class="history-title" style="color:var(--red);">Points Deducted${isMyTeam?' <span style="font-size:10px;background:rgba(255,68,68,.2);padding:2px 6px;border-radius:4px;">YOUR TEAM</span>':''}</div>
+          <div class="history-detail">👥 <strong>${tName}</strong></div>
           <div class="history-detail">📝 Reason: ${m.reason}</div>
           <div class="history-detail">${m.date||''}</div>
         </div>
         <div class="history-pts neg">−${m.amount}</div>
       </div>`;
     } else {
-      const pts=(m.points||{})[currentUser]||0;
+      // Show ALL teams' points for this match
       const seq=matchSeq--;
-      html+=`<div class="history-entry ${pts>0?'gain':''}">
-        <div class="history-icon">${pts>0?'🏏':'⬜'}</div>
-        <div class="history-body">
-          <div class="history-title">${m.name}</div>
-          <div class="history-detail">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()} · Match ${seq} · ${m.date||''}</div>
-          ${m.reason?`<div class="history-detail" style="color:rgba(255,184,0,.7);">📝 ${m.reason}</div>`:''}
-          ${pts===0?'<div class="history-detail" style="color:var(--muted);">No points scored this match</div>':''}
+      const allTeamPts = Object.entries(m.points||{}).sort((a,b)=>b[1]-a[1]);
+      html+=`<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;">🏏 ${m.name}</div>
+            <div style="font-size:11px;color:var(--muted);">Match ${seq} · ${m.date||''}</div>
+            ${m.reason?`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:2px;">📝 ${m.reason}</div>`:''}
+          </div>
         </div>
-        <div class="history-pts ${pts>0?'pos':'neg'}" style="${pts===0?'background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.08);':''}">
-          ${pts>0?'+'+pts:'—'}
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${allTeamPts.map(([tid,pts])=>{
+            const tName=teamsData[tid]?.name||tid.toUpperCase();
+            const isMe=tid===currentUser;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;background:${isMe?'rgba(255,184,0,.06)':'var(--surface)'};border:1px solid ${isMe?'rgba(255,184,0,.2)':'rgba(255,255,255,.05)'};border-radius:8px;padding:8px 12px;">
+              <div style="font-size:13px;font-weight:700;">${tName}${isMe?' <span style="font-size:9px;color:var(--gold);letter-spacing:1px;">(YOU)</span>':''}</div>
+              <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${pts>0?'var(--green)':'var(--muted)'};">${pts>0?'+'+pts:'—'}</div>
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
     }

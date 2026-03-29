@@ -176,9 +176,8 @@ pointer-events:none;z-index:0;}
         <input class="admin-input" id="match-date" type="date" style="max-width:180px;"/>
       </div>
       <div class="pts-grid" id="pts-inputs"></div>
-      <div class="admin-row">
-        <input class="admin-input" id="match-reason" placeholder="Reason / note (e.g. Virat scored 80 runs, Bumrah took 3 wkts)" style="flex:1;"/>
-      </div>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin:10px 0 8px;">REASON BREAKDOWN PER TEAM (point wise)</div>
+      <div id="reason-inputs" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px;"></div>
       <button class="admin-btn" onclick="adminAddMatch()">➕ SAVE MATCH POINTS</button>
       <hr class="divider"/>
       <div class="admin-title" style="font-size:16px;margin-bottom:12px;">➖ DEDUCT POINTS FROM A TEAM</div>
@@ -401,7 +400,7 @@ function renderMyPoints(){
       } else {
         const pts=(m.points||{})[currentUser]||0;
         html+=`<div class="mh-row">
-          <div><div class="mh-name">${m.name}</div><div class="mh-date">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()} · ${m.date||''} · Match ${matchNum--}</div>${m.reason?`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:3px;">📝 ${m.reason}</div>`:''}</div>
+          <div><div class="mh-name">${m.name}</div><div class="mh-date">👥 ${teamsData[currentUser]?.name||currentUser.toUpperCase()} · ${m.date||''} · Match ${matchNum--}</div>${(m.reasons&&m.reasons[currentUser])?(Array.isArray(m.reasons[currentUser])?m.reasons[currentUser].map((r,i)=>`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:2px;">${i+1}. ${r}</div>`).join(''):(`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:2px;">📝 ${m.reasons[currentUser]}</div>`)):m.reason?`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:3px;">📝 ${m.reason}</div>`:''}</div>
           <div class="mh-pts ${pts>0?'pos':'zero'}">${pts>0?'+'+pts:'—'}</div>
         </div>`;
       }
@@ -453,6 +452,20 @@ function renderPtsInputs(){
       <div class="pts-label">${t.name||id.toUpperCase()}</div>
       <input class="pts-input" id="pts-${id}" type="number" min="0" step="1" placeholder="0"/>
     </div>`).join('');
+
+  // Per-team reason inputs — point-wise numbered list
+  const rel=document.getElementById('reason-inputs');
+  if(rel){
+    rel.innerHTML=Object.entries(teamsData).map(([id,t])=>`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">${t.name||id.toUpperCase()}</div>
+        <div id="reason-list-${id}" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <button onclick="addReasonLine('${id}')" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);color:var(--gold);border-radius:6px;padding:6px 12px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;">+ ADD POINT</button>
+      </div>`).join('');
+    // Add first line for each team automatically
+    Object.keys(teamsData).forEach(id=>addReasonLine(id));
+  }
+
   // populate deduct team select
   const sel=document.getElementById('deduct-team-sel');
   if(sel){
@@ -494,13 +507,20 @@ async function adminAddMatch(){
   if(!isAdmin)return;
   const name=document.getElementById('match-name').value.trim();
   const date=document.getElementById('match-date').value;
-  const reason=document.getElementById('match-reason').value.trim();
+  // collect per-team numbered reasons
+  const reasons={};
+  Object.keys(teamsData).forEach(id=>{
+    const list=document.getElementById('reason-list-'+id);
+    if(!list) return;
+    const lines=[...list.querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean);
+    if(lines.length) reasons[id]=lines;
+  });
   if(!name){toast('Enter a match name','red');return;}
   const pts={};let any=false;
   Object.keys(teamsData).forEach(id=>{const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;pts[id]=v;if(v>0)any=true;});
   if(!any){toast('Enter points for at least one team','red');return;}
   try{
-    await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,reason:reason||'',timestamp:Date.now()});
+    await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,reasons,timestamp:Date.now()});
     toast('✅ Match saved!','green');
     document.getElementById('match-name').value='';
     document.getElementById('match-date').value='';
@@ -575,7 +595,7 @@ function renderHistory(){
           <div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;">🏏 ${m.name}</div>
             <div style="font-size:11px;color:var(--muted);">Match ${seq} · ${m.date||''}</div>
-            ${m.reason?`<div style="font-size:11px;color:rgba(255,184,0,.7);margin-top:2px;">📝 ${m.reason}</div>`:''}
+            ${(m.reasons&&m.reasons[tid])?(Array.isArray(m.reasons[tid])?m.reasons[tid].map((r,i)=>`<div style="font-size:10px;color:rgba(255,184,0,.6);margin-top:1px;">${i+1}. ${r}</div>`).join(''):(`<div style="font-size:10px;color:rgba(255,184,0,.6);margin-top:2px;">📝 ${m.reasons[tid]}</div>`)):''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
@@ -668,6 +688,29 @@ async function confirmPtsReset(){
   } catch(e){
     toast('Reset failed: '+e.message,'red');
   }
+}
+
+
+function addReasonLine(teamId){
+  const list=document.getElementById('reason-list-'+teamId);
+  if(!list) return;
+  const idx=list.children.length+1;
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;align-items:center;gap:6px;';
+  row.innerHTML=`
+    <span style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);width:18px;flex-shrink:0;">${idx}.</span>
+    <input style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" placeholder="e.g. Virat scored 80 runs (+8 pts)" />
+    <button onclick="this.parentElement.remove();renumberReasons('${teamId}')" style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);color:var(--red);border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;flex-shrink:0;">✕</button>`;
+  list.appendChild(row);
+}
+
+function renumberReasons(teamId){
+  const list=document.getElementById('reason-list-'+teamId);
+  if(!list) return;
+  [...list.children].forEach((row,i)=>{
+    const num=row.querySelector('span');
+    if(num) num.textContent=(i+1)+'.';
+  });
 }
 
 let toastT=null;

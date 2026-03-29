@@ -591,20 +591,27 @@ function renderHistory(){
       const seq=matchSeq--;
       const allTeamPts = Object.entries(m.points||{}).sort((a,b)=>b[1]-a[1]);
       html+=`<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
-          <div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;">🏏 ${m.name}</div>
-            <div style="font-size:11px;color:var(--muted);">Match ${seq} · ${m.date||''}</div>
-            ${(m.reasons&&m.reasons[tid])?(Array.isArray(m.reasons[tid])?m.reasons[tid].map((r,i)=>`<div style="font-size:10px;color:rgba(255,184,0,.6);margin-top:1px;">${i+1}. ${r}</div>`).join(''):(`<div style="font-size:10px;color:rgba(255,184,0,.6);margin-top:2px;">📝 ${m.reasons[tid]}</div>`)):''}
-          </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;">🏏 ${m.name}</div>
+          <div style="font-size:11px;color:var(--muted);">Match ${seq} · ${m.date||''}</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
           ${allTeamPts.map(([tid,pts])=>{
             const tName=teamsData[tid]?.name||tid.toUpperCase();
             const isMe=tid===currentUser;
-            return `<div style="display:flex;justify-content:space-between;align-items:center;background:${isMe?'rgba(255,184,0,.06)':'var(--surface)'};border:1px solid ${isMe?'rgba(255,184,0,.2)':'rgba(255,255,255,.05)'};border-radius:8px;padding:8px 12px;">
-              <div style="font-size:13px;font-weight:700;">${tName}${isMe?' <span style="font-size:9px;color:var(--gold);letter-spacing:1px;">(YOU)</span>':''}</div>
-              <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${pts>0?'var(--green)':'var(--muted)'};">${pts>0?'+'+pts:'—'}</div>
+            // Get reasons for this specific team
+            const teamReasons=m.reasons&&m.reasons[tid];
+            const reasonsHtml=teamReasons
+              ?(Array.isArray(teamReasons)
+                ? teamReasons.map((r,i)=>`<div style="font-size:10px;color:rgba(255,184,0,.7);margin-top:2px;">${i+1}. ${r}</div>`).join('')
+                : `<div style="font-size:10px;color:rgba(255,184,0,.7);margin-top:2px;">📝 ${teamReasons}</div>`)
+              :'';
+            return `<div style="background:${isMe?'rgba(255,184,0,.06)':'var(--surface)'};border:1px solid ${isMe?'rgba(255,184,0,.2)':'rgba(255,255,255,.05)'};border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:13px;font-weight:700;">${tName}${isMe?` <span style="font-size:9px;color:var(--gold);letter-spacing:1px;">(YOU)</span>`:''}</div>
+                <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${pts>0?'var(--green)':'var(--muted)'};">${pts>0?'+'+pts:'—'}</div>
+              </div>
+              ${reasonsHtml}
             </div>`;
           }).join('')}
         </div>

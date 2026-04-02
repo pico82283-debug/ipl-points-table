@@ -103,6 +103,8 @@ pointer-events:none;z-index:0;}
 .lb-bar-fill{height:3px;border-radius:2px;transition:width .8s ease;}
 
 .empty{text-align:center;padding:48px;color:var(--muted);}
+@keyframes dotPulse{0%,100%{opacity:.2;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+@keyframes welcomeFadeOut{0%{opacity:1;}100%{opacity:0;pointer-events:none;}}
 .rules-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;}
 .rules-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
 .rule-row{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
@@ -206,6 +208,21 @@ pointer-events:none;z-index:0;}
     <div class="panel" id="panel-history"></div>
     <div class="panel" id="panel-leaderboard"></div>
   </div>
+
+<!-- WELCOME OVERLAY -->
+<div id="welcome-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--dark);flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+  <div id="welcome-inner" style="opacity:0;transform:scale(.85);transition:opacity .5s ease,transform .5s ease;">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;letter-spacing:6px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;">IPL POINTS 2026</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,96px);letter-spacing:6px;background:linear-gradient(135deg,var(--gold-light),var(--gold),#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px;">WELCOME</div>
+    <div id="welcome-name" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,6vw,48px);letter-spacing:4px;color:var(--text);margin-bottom:24px;"></div>
+    <div style="display:flex;justify-content:center;gap:6px;" id="welcome-dots">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotPulse 1.2s infinite .0s;"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotPulse 1.2s infinite .2s;"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotPulse 1.2s infinite .4s;"></div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- RESET MODAL -->
@@ -301,7 +318,9 @@ function launchApp(){
         if(t[id]?.name)teamsData[id]={...DEFAULT_TEAMS[id],name:t[id].name,pass:t[id].pass||DEFAULT_TEAMS[id].pass};
       });
     }
-    document.getElementById('header-user').textContent=isAdmin?'👑 ADMIN':(teamsData[currentUser]?.name||currentUser.toUpperCase());
+    const displayName = isAdmin ? '👑 ADMIN' : (teamsData[currentUser]?.name||currentUser.toUpperCase());
+    document.getElementById('header-user').textContent=displayName;
+    showWelcome(isAdmin ? 'ADMIN' : displayName);
     renderPtsInputs();
     setupListener();
   }).catch(()=>{
@@ -718,6 +737,25 @@ function renumberReasons(teamId){
     const num=row.querySelector('span');
     if(num) num.textContent=(i+1)+'.';
   });
+}
+
+
+function showWelcome(name){
+  const overlay = document.getElementById('welcome-overlay');
+  const inner = document.getElementById('welcome-inner');
+  const nameEl = document.getElementById('welcome-name');
+  if(!overlay||!inner||!nameEl) return;
+  nameEl.textContent = name;
+  overlay.style.display='flex';
+  // Fade in
+  setTimeout(()=>{ inner.style.opacity='1'; inner.style.transform='scale(1)'; }, 50);
+  // Fade out after 2.2s
+  setTimeout(()=>{
+    inner.style.transition='opacity .5s ease, transform .5s ease';
+    inner.style.opacity='0';
+    inner.style.transform='scale(1.05)';
+    setTimeout(()=>{ overlay.style.display='none'; },500);
+  }, 2200);
 }
 
 let toastT=null;

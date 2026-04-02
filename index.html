@@ -271,6 +271,7 @@ async function doLogin(){
   if(id===ADMIN_CREDS.id&&pass===ADMIN_CREDS.pass){
     currentUser='admin';isAdmin=true;
     if(!initFirebase()){err.textContent='Database connection failed.';currentUser=null;isAdmin=false;return;}
+    showWelcome('ADMIN');
     launchApp();return;
   }
   if(!initFirebase()){err.textContent='Database connection failed.';return;}
@@ -279,14 +280,14 @@ async function doLogin(){
     if(snap.exists()){
       const t=snap.val();
       const vp=t.pass||DEFAULT_TEAMS[id]?.pass;
-      if(vp===pass){currentUser=id;isAdmin=false;launchApp();return;}
+      if(vp===pass){currentUser=id;isAdmin=false;showWelcome(t.name||DEFAULT_TEAMS[id]?.name||id.toUpperCase());launchApp();return;}
       err.textContent='Incorrect password.';
     } else {
-      if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;launchApp();return;}
+      if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;showWelcome(DEFAULT_TEAMS[id].name||id.toUpperCase());launchApp();return;}
       err.textContent='Team ID not found.';
     }
   }catch(e){
-    if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;launchApp();return;}
+    if(DEFAULT_TEAMS[id]&&DEFAULT_TEAMS[id].pass===pass){currentUser=id;isAdmin=false;showWelcome(DEFAULT_TEAMS[id].name||id.toUpperCase());launchApp();return;}
     err.textContent='Connection error. Try again.';
   }
 }
@@ -320,7 +321,6 @@ function launchApp(){
     }
     const displayName = isAdmin ? '👑 ADMIN' : (teamsData[currentUser]?.name||currentUser.toUpperCase());
     document.getElementById('header-user').textContent=displayName;
-    showWelcome(isAdmin ? 'ADMIN' : displayName);
     renderPtsInputs();
     setupListener();
   }).catch(()=>{

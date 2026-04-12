@@ -687,7 +687,7 @@ function renderRules(){
         <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;">These rules are fixed and cannot be changed by anyone</div>
       </div>
     </div>
-    ${buildSection('GENERAL','📋',[{text:'If the match is <strong>CANCELLED</strong> due to any reason, <strong>no points</strong> will be awarded to any team',pts:'0 PTS',bonus:false}])}
+    ${buildSection('GENERAL','📋',[{text:'If the match is <strong>CANCELLED</strong> due to any reason, <strong>no points</strong> will be awarded to any team',pts:'0 PTS',bonus:false},{text:'For the same category, only the <strong>HIGHEST BONUS</strong> will be awarded. Bonus points in the same category <strong>cannot be added up</strong> (e.g. if a bowler takes 5 wkts, only +7 bonus is given — not +5 and +7 combined)',pts:'HIGHEST ONLY',bonus:false}])}
     ${buildSection('BATTING','🏏',batting)}
     ${buildSection('BOWLING','🎳',bowling)}
     ${buildSection('FIELDING','🧤',fielding)}

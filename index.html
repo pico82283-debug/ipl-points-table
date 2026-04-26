@@ -197,7 +197,14 @@ pointer-events:none;z-index:0;}
       <hr class="divider"/>
       <button class="admin-btn" onclick="adminResetAll()" style="background:linear-gradient(135deg,#ff4444,#cc2222);color:#fff;margin-bottom:0;">⚠️ RESET ALL POINTS DATA</button>
       <hr class="divider"/>
-      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH / DEDUCTION</div>
+      <div class="admin-title" style="font-size:16px;margin-bottom:12px;">🚫 MARK A MATCH AS CANCELLED</div>
+      <div class="admin-row">
+        <input class="admin-input" id="cancelled-match-name" placeholder="Match name (e.g. MI vs CSK — Match 5)"/>
+        <input class="admin-input" id="cancelled-match-date" type="date" style="max-width:180px;"/>
+      </div>
+      <button class="admin-btn" onclick="adminMarkCancelled()" style="background:linear-gradient(135deg,#555,#333);color:#fff;margin-bottom:0;">🚫 SAVE CANCELLED MATCH</button>
+      <hr class="divider"/>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DELETE A MATCH / DEDUCTION / CANCELLATION</div>
       <div class="admin-row">
         <select class="admin-select" id="delete-match-sel"></select>
         <button class="admin-btn red" onclick="adminDeleteMatch()">🗑 DELETE</button>
@@ -355,7 +362,8 @@ function calcTotals(){
   const totals={};
   Object.keys(teamsData).forEach(id=>totals[id]=0);
   Object.values(matchesData).forEach(m=>{
-    if(m.type==='deduction'){
+    if(m.type==='cancelled'){ return; } // no points for cancelled matches
+    else if(m.type==='deduction'){
       // deduction entry: {type:'deduction', team, amount, reason, date, timestamp}
       if(totals[m.team]!==undefined) totals[m.team]-=m.amount;
     } else {
@@ -406,7 +414,17 @@ function renderMyPoints(){
   } else {
     let matchNum=matches.filter(([,m])=>m.type!=='deduction').length;
     matches.forEach(([id,m])=>{
-      if(m.type==='deduction'){
+      if(m.type==='cancelled'){
+      html+=`<div style="background:rgba(100,100,100,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:22px;">🚫</div>
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--muted);">MATCH CANCELLED</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">${m.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${m.date||''} · No points awarded to any team</div>
+        </div>
+        <span style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:1px;">CANCELLED</span>
+      </div>`;
+    } else if(m.type==='deduction'){
         if(m.team!==currentUser) return; // only show this team's deductions
         html+=`<div class="deduct-row">
           <div>
@@ -536,9 +554,9 @@ async function adminAddMatch(){
     if(lines.length) reasons[id]=lines;
   });
   if(!name){toast('Enter a match name','red');return;}
-  const pts={};let any=false;
-  Object.keys(teamsData).forEach(id=>{const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;pts[id]=v;if(v>0)any=true;});
-  if(!any){toast('Enter points for at least one team','red');return;}
+  const pts={};let totalPts=0;
+  Object.keys(teamsData).forEach(id=>{const v=parseInt(document.getElementById('pts-'+id)?.value||'0')||0;pts[id]=v;totalPts+=v;});
+  if(totalPts===0){toast('⚠️ Cannot save — all teams have 0 points. Enter at least some points or mark match as cancelled instead.','red');return;}
   try{
     await db.ref('/points/match_'+Date.now()).set({name,date:date||new Date().toISOString().split('T')[0],points:pts,reasons,timestamp:Date.now()});
     toast('✅ Match saved!','green');
@@ -555,6 +573,8 @@ function renderDeleteMatchSelect(){
   sel.innerHTML=m.length?m.map(([id,v])=>{
     const label=v.type==='deduction'
       ?`➖ DEDUCTION: ${v.teamName||v.team} -${v.amount}pts — ${v.reason} (${v.date})`
+      :v.type==='cancelled'
+      ?`🚫 CANCELLED: ${v.name} (${v.date})`
       :`${v.name} (${v.date})`;
     return `<option value="${id}">${label}</option>`;
   }).join(''):'<option>No entries yet</option>';
@@ -592,7 +612,17 @@ function renderHistory(){
   </div>`;
 
   allEntries.forEach(([id,m])=>{
-    if(m.type==='deduction'){
+    if(m.type==='cancelled'){
+      html+=`<div style="background:rgba(100,100,100,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:22px;">🚫</div>
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--muted);">MATCH CANCELLED</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">${m.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${m.date||''} · No points awarded to any team</div>
+        </div>
+        <span style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:1px;">CANCELLED</span>
+      </div>`;
+    } else if(m.type==='deduction'){
       // Show ALL deductions for ALL teams
       const tName = teamsData[m.team]?.name||m.teamName||m.team;
       const isMyTeam = m.team===currentUser;
@@ -759,6 +789,25 @@ function showWelcome(name){
     inner.style.transform='scale(1.05)';
     setTimeout(()=>{ overlay.style.display='none'; },500);
   }, 2200);
+}
+
+
+async function adminMarkCancelled(){
+  if(!isAdmin)return;
+  const name=document.getElementById('cancelled-match-name').value.trim();
+  const date=document.getElementById('cancelled-match-date').value;
+  if(!name){toast('Enter match name','red');return;}
+  try{
+    await db.ref('/points/cancel_'+Date.now()).set({
+      type:'cancelled',
+      name,
+      date:date||new Date().toISOString().split('T')[0],
+      timestamp:Date.now()
+    });
+    toast('🚫 Match marked as cancelled!','red');
+    document.getElementById('cancelled-match-name').value='';
+    document.getElementById('cancelled-match-date').value='';
+  }catch(e){toast('Failed: '+e.message,'red');}
 }
 
 let toastT=null;
